@@ -9,9 +9,7 @@ import java.net.Socket;
 public class Connection implements Runnable {
 
 	private Server server;
-
 	private Socket client;
-
 	private OutputStream os;
 
 	public Connection(Server server, Socket client) {
@@ -32,18 +30,15 @@ public class Connection implements Runnable {
 	public void run() {
 
 		try {
-
 			InputStreamReader in = new InputStreamReader(
 					client.getInputStream());
 			BufferedReader reader = new BufferedReader(in);
 
 			String bla;
-			while ((bla = reader.readLine()) != null) {
-				
-				System.out.println("message an server:" + bla);
+			while (true) {
 
+				bla = reader.readLine();
 				server.broadcasts(bla);
-
 			}
 
 		} catch (IOException e) {
@@ -54,9 +49,7 @@ public class Connection implements Runnable {
 	}
 
 	public void sendMessage(String message) throws IOException {
-
-		this.os.write(message.getBytes());
-
+		os.write(message.getBytes());
 		os.flush();
 
 	}

@@ -21,19 +21,14 @@ public class Server {
 			while (true) {
 
 				Socket client = serverSocket.accept();
-
 				Connection serverClientConnection = new Connection(this, client);
-
 				new Thread(serverClientConnection).start();
-				
 				connections.add(serverClientConnection);
-
-				System.out.println("Connected");
+				System.out.println("...connection established");
 
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -42,7 +37,6 @@ public class Server {
 	public void broadcasts(String message) throws IOException {
 
 		for (Connection c : connections) {
-
 			c.sendMessage(message);
 
 		}
@@ -51,9 +45,7 @@ public class Server {
 
 	public static void main(String[] args) {
 
-		System.out.println("Server");
-
+		System.out.println("Server running...");
 		Server server = new Server();
-
 	}
 }

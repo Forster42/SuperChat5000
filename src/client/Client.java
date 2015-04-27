@@ -11,7 +11,7 @@ public class Client {
 	public static void main(String[] args) throws UnknownHostException,
 			IOException {
 
-		System.out.println("Client");
+		System.out.println("Client running");
 
 		Socket server = new Socket("localhost", 4242);
 
@@ -25,8 +25,7 @@ public class Client {
 				while (true) {
 
 					try {
-						String message = scanner.nextLine();
-						System.out.println("Scan: "+message);
+						String message = scanner.nextLine()+System.lineSeparator();
 						server.getOutputStream().write(
 								message.getBytes());
 						server.getOutputStream().flush();
