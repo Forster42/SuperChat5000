@@ -11,16 +11,20 @@ public class Connection implements Runnable {
 	private Server server;
 	private Socket client;
 	private OutputStream os;
+	private BufferedReader inputReader;
+	private boolean disconnect = false;
+	private final String DISCONNECT_MESSAGE="disconnect";
 
 	public Connection(Server server, Socket client) {
 
 		this.server = server;
 		this.client = client;
-
+		
 		try {
-			this.os = client.getOutputStream();
+			os = client.getOutputStream();
+			inputReader = new BufferedReader(new InputStreamReader(
+					client.getInputStream()));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -30,19 +34,21 @@ public class Connection implements Runnable {
 	public void run() {
 
 		try {
-			InputStreamReader in = new InputStreamReader(
-					client.getInputStream());
-			BufferedReader reader = new BufferedReader(in);
+			String message;
+			while (!disconnect) {
 
-			String bla;
-			while (true) {
-
-				bla = reader.readLine();
-				server.broadcasts(bla);
+				message = inputReader.readLine();
+				//if(!message.equals("DISCONNECT_EVENT"))
+				//{
+				server.broadcasts(message);
+				//}}
 			}
+			
+			//close connection
+			client.close();
+			System.out.println("[Closed a connection]");
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -54,4 +60,10 @@ public class Connection implements Runnable {
 
 	}
 
+	public void disconnect() throws IOException {
+		disconnect = true;
+		os.write(DISCONNECT_MESSAGE.getBytes());
+		os.flush();
+		
+	}
 }

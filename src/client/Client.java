@@ -1,5 +1,6 @@
 package client;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
@@ -7,13 +8,15 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Client {
+	
+	private static final String DISCONNECT_MESSAGE="disconnect";
+	private static Socket server;
+	private static boolean shutdown = false;
 
 	public static void main(String[] args) throws UnknownHostException,
 			IOException {
 
-		System.out.println("Client running");
-
-		Socket server = new Socket("localhost", 4242);
+		server = new Socket("localhost", 4242);
 
 		new Thread(new Runnable() {
 
@@ -22,31 +25,49 @@ public class Client {
 
 				Scanner scanner = new Scanner(System.in);
 
-				while (true) {
-
-					try {
-						String message = scanner.nextLine()+System.lineSeparator();
-						server.getOutputStream().write(
-								message.getBytes());
-						server.getOutputStream().flush();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
+				boolean stopScanner = false;
+				while (!stopScanner) {
+					stopScanner = sendMessage(scanner.nextLine());
 				}
-
 			}
 		}).start();
 
-		InputStreamReader in = new InputStreamReader(server.getInputStream());
-
-		while (true) {
-
-			System.out.println(in.read());
-
+		System.out.println("Client running");
+		
+		BufferedReader inputReader = new BufferedReader(new InputStreamReader(
+				server.getInputStream()));
+		
+		while (!shutdown) {
+			String message = inputReader.readLine();
+		
+			if(message.equals(DISCONNECT_MESSAGE))
+			{
+				sendMessage("DISCONNECT_EVENT");
+				shutdown = true;
+			}
+			else
+			{
+				System.out.println(message);
+			}
 		}
-
+	}
+	
+	private static boolean sendMessage(String message)
+	{
+		boolean shutdownMessage = message.equals("shutdown");
+		message = message
+				+ System.lineSeparator();
+		try {
+			server.getOutputStream().write(message.getBytes());
+			server.getOutputStream().flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return shutdownMessage;
+	}
 	}
 
-}
+	
+
+
