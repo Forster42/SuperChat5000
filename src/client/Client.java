@@ -7,67 +7,72 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-public class Client {
-	
-	private static final String DISCONNECT_MESSAGE="disconnect";
-	private static Socket server;
-	private static boolean shutdown = false;
+public class Client
+{
 
-	public static void main(String[] args) throws UnknownHostException,
-			IOException {
+    private static final String LOGOUT_MESSAGE = "quit";
+    private static final String DISCONNECT_REQ = "DISCONNECT_REQ";
+    private static final String DISCONNECT_ACK = "DISCONNECT_ACK";
+    private static boolean disconnected = false;
+    private static Socket server;
 
-		server = new Socket("localhost", 4242);
+    public static void main(String[] args) throws UnknownHostException,
+            IOException
+    {
 
-		new Thread(new Runnable() {
+        //launch extra read reading from stdin until LOGOUT_MESSAGE was entered
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Scanner scanner = new Scanner(System.in);
+                while (!sendMessage(scanner.nextLine())) {
+                }
+                scanner.close();
+            }
 
-			@Override
-			public void run() {
+        }).start();
 
-				Scanner scanner = new Scanner(System.in);
+        // connect to server socket and listen for incoming messages
+        server = new Socket("localhost", 4242);
+        BufferedReader inputReader = new BufferedReader(new InputStreamReader(
+                server.getInputStream()));
+        String message = "***SuperChat5000***";
+        while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
+            System.out.println(message);
+            message = inputReader.readLine();
+        }
+        //in case the server still needs to be unblocked, send unblock ACK
+        if (message.equals(DISCONNECT_REQ)) {
+            sendMessage(DISCONNECT_ACK);
+        }
 
-				boolean stopScanner = false;
-				while (!stopScanner) {
-					stopScanner = sendMessage(scanner.nextLine());
-				}
-			}
-		}).start();
+        disconnected = true;
+        System.out.println("[Connection closed, type any key to exit]");
+    }
 
-		System.out.println("Client running");
-		
-		BufferedReader inputReader = new BufferedReader(new InputStreamReader(
-				server.getInputStream()));
-		
-		while (!shutdown) {
-			String message = inputReader.readLine();
-		
-			if(message.equals(DISCONNECT_MESSAGE))
-			{
-				sendMessage("DISCONNECT_EVENT");
-				shutdown = true;
-			}
-			else
-			{
-				System.out.println(message);
-			}
-		}
-	}
-	
-	private static boolean sendMessage(String message)
-	{
-		boolean shutdownMessage = message.equals("shutdown");
-		message = message
-				+ System.lineSeparator();
-		try {
-			server.getOutputStream().write(message.getBytes());
-			server.getOutputStream().flush();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return shutdownMessage;
-	}
-	}
+    /**
+     * Sends message through socket connection. Returns true if the message sent
+     * was the disconnect message.
+     *
+     * @param message as the content to be transmitted
+     * @return whether the message matches the disconnect sequence
+     */
+    private static boolean sendMessage(String message)
+    {
+        if (!disconnected) {
+            try {
+                server.getOutputStream().write(
+                        new String((message.equals(LOGOUT_MESSAGE) ? DISCONNECT_REQ : message) + System.lineSeparator()).getBytes());
+                server.getOutputStream().flush();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            return message.equals(LOGOUT_MESSAGE);
+        }
+        return true;
+    }
 
-	
-
-
+}
