@@ -6,76 +6,88 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class Connection implements Runnable {
+public class Connection implements Runnable
+{
 
-	private Server server;
-	private Socket client;
-	private OutputStream os;
-	private BufferedReader inputReader;
-	private boolean disconnect = false;
+    private Server server;
+    private Socket client;
+    private OutputStream os;
+    private BufferedReader inputReader;
+    private boolean disconnect = false;
 
-	static final String DISCONNECT_REQ = "DISCONNECT_REQ";
-	private static final String DISCONNECT_ACK = "DISCONNECT_ACK";
+    static final String DISCONNECT_REQ = "DISCONNECT_REQ";
+    private static final String DISCONNECT_ACK = "DISCONNECT_ACK";
 
-	public Connection(Server server, Socket client) {
+    public Connection(Server server, Socket client)
+    {
 
-		this.server = server;
-		this.client = client;
+        this.server = server;
+        this.client = client;
 
-		try {
-			os = client.getOutputStream();
-			inputReader = new BufferedReader(new InputStreamReader(
-					client.getInputStream()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+        try {
+            os = client.getOutputStream();
+            inputReader = new BufferedReader(new InputStreamReader(
+                    client.getInputStream()));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	/**
-	 * Handle all incoming connections until disconnect message unblocks the
-	 * loop
-	 */
-	@Override
-	public void run() {
-		try {
-			String message;
-			while (!disconnect) {
-				message = inputReader.readLine();
-				if (!((message.equals(DISCONNECT_ACK) || message
-						.equals(DISCONNECT_REQ))))
-					server.broadcasts(message);
-				else
-					disconnect(message.equals(DISCONNECT_REQ));
-			}
+    /**
+     * Handle all incoming connections until disconnect message unblocks the
+     * loop
+     */
+    @Override
+    public void run()
+    {
+        try {
+            String message;
+            while (!disconnect) {
+                message = inputReader.readLine();
+                System.out.println("Incoming message: " + message);
+                if (!((message.equals(DISCONNECT_ACK) || message
+                        .equals(DISCONNECT_REQ)))) {
+                    server.broadcasts(message);
+                }
+                else {
+                    disconnect(message.equals(DISCONNECT_REQ));
+                }
+            }
 
-			// close connection
-			client.close();
-			System.out.println("[Closed a connection]");
+            // close connection
+            client.close();
+            System.out.println("[Closed a connection]");
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	/**
-	 * Sends a given message to the remote client
-	 * 
-	 * @param message
-	 * @throws IOException
-	 */
-	public void sendMessage(String message) throws IOException {
-		os.write(message.getBytes());
-		os.flush();
-	}
+    /**
+     * Sends a given message to the remote client
+     *
+     * @param message
+     * @throws IOException
+     */
+    public void sendMessage(String message) throws IOException
+    {
+        os.write(message.getBytes());
+        os.flush();
+    }
 
-	/**
-	 * 
-	 * @throws IOException
-	 */
-	public void disconnect(boolean sendAck) throws IOException {
-		disconnect = true;
-		if (sendAck)
-			sendMessage(DISCONNECT_ACK);
-		//server.removeConnection(this);
-	}
+    /**
+     *
+     * @throws IOException
+     */
+    public void disconnect(boolean sendAck) throws IOException
+    {
+        disconnect = true;
+        if (sendAck) {
+            sendMessage(DISCONNECT_ACK);
+        }
+        //server.removeConnection(this);
+    }
+
 }

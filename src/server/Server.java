@@ -33,33 +33,27 @@ public class Server
     }
 
     /**
-     * Launched a scanner listening for the shutdown sequence in an axtra
+     * Launched a scanner listening for the shutdown sequence in an extra
      * thread. Once entered all clients are logged out and the server will be
      * shut down.
      */
     private void launchCommandLine()
     {
         // launch extra read reading from stdin until SHUTDOWN_MESSAGE was typed
-        new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Scanner scanner = new Scanner(System.in);
+        new Thread(() -> {
+            try (Scanner scanner = new Scanner(System.in)) {
                 while (!scanner.nextLine().equals(SHUTDOWN_MESSAGE)) {
                 }
-                scanner.close();
-
-                //unblock thread waiting for new clients, using loopback socket
-                shutdown = true;
-                try {
-                    Socket loopbackSocket = new Socket("localhost", 4242);
-                }
-                catch (IOException ex) {
-                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                }
             }
-
+            
+            //unblock thread waiting for new clients, using loopback socket
+            shutdown = true;
+            try {
+                Socket loopbackSocket = new Socket("localhost", 4242);
+            }
+            catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }).start();
     }
 
