@@ -9,8 +9,6 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 
 /**
@@ -22,9 +20,13 @@ public final class ChatPanel extends JPanel
 
     private final JTextArea chatLog;
     private final JTextField chatSend;
+    private String username;
 
     public ChatPanel(Color bgColor)
     {
+        //get username from system
+        username = System.getProperty("user.name");
+
         //final Container topLayer = getContentPane();
         setLayout(new BorderLayout());
         setBackground(bgColor);
@@ -39,9 +41,9 @@ public final class ChatPanel extends JPanel
         add(chatSend, BorderLayout.SOUTH);
 
         chatSend.addKeyListener(new KeyboardListener());
-        
+
         chatSend.setText("connect:192.168.1.3");
-        
+
         ConnectionManager.getInstance().setOutputWindow(this);
     }
 
@@ -131,7 +133,6 @@ public final class ChatPanel extends JPanel
                         writeLog("Unable to connect to \"" + ip + "\"");
                         return;
                     }
-
                 }
                 else if (message.equals("disconnect") && ConnectionManager.getInstance().isConnected()) {
                     try {
@@ -142,8 +143,12 @@ public final class ChatPanel extends JPanel
                         throw new RuntimeException("Unable to disconnect");
                     }
                 }
+                else if (message.startsWith("setname:")) {
+
+                    username = message.split(":")[0].trim();
+                }
                 else {
-                    ConnectionManager.getInstance().sendMessage(message);
+                    ConnectionManager.getInstance().sendMessage(username + ": " + message);
                 }
 
                 //clear input field
