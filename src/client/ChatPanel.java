@@ -40,7 +40,7 @@ public final class ChatPanel extends JPanel
 
         chatSend.addKeyListener(new KeyboardListener());
         
-        chatSend.setText("connect:132.231.178.147");
+        chatSend.setText("connect:192.168.21.100");
         
         ConnectionManager.getInstance().setOutputWindow(this);
     }
@@ -148,7 +148,7 @@ public final class ChatPanel extends JPanel
                 }
 
                 //update own gui
-                extendHistory(message);
+                //extendHistory(message);
                 clearEntryField();
             }
         }

@@ -87,7 +87,7 @@ public class Connection implements Runnable
         if (sendAck) {
             sendMessage(DISCONNECT_ACK);
         }
-        //server.removeConnection(this);
+        server.removeConnection(this);
     }
 
 }
