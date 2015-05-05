@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.Arrays;
 
 /**
  *
@@ -18,6 +19,7 @@ public class ConnectionManager
     private final String DISCONNECT_ACK = "DISCONNECT_ACK";
     private boolean connected = false;
     private Socket server;
+    private boolean encryptionEnabled = true;
 
     private static ConnectionManager singletonReference = null;
 
@@ -53,7 +55,7 @@ public class ConnectionManager
             {
                 String message = "";
                 while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
-                    chatPanel.extendHistory(message);
+                    chatPanel.extendHistory(decrypt(message));
                     try {
                         message = inputReader.readLine();
                     }
@@ -89,7 +91,7 @@ public class ConnectionManager
         if (connected) {
             try {
                 server.getOutputStream().write(
-                        (message + System.lineSeparator()).getBytes());
+                        ((encryptionEnabled?encrypt(message):message) + System.lineSeparator()).getBytes());
                 server.getOutputStream().flush();
             }
             catch (IOException ex) {
@@ -104,4 +106,32 @@ public class ConnectionManager
         return connected;
     }
 
+    /**
+     * reverts the message (ignoring the message origin prelude)
+     */
+    private String encrypt(String message)
+    {
+        //checking for a collon, since this indicates a username exists, therfore it is not DISCONNECT_REQ / DISCONNECT_ACKF
+        if(message.contains(":"))
+        {
+            //split at fors colon
+            String[] messageSplice = message.split(":", 2);
+            char[]  choppedMessageContent = messageSplice[1].toCharArray();
+            char[] invertedMessageContent = new char[choppedMessageContent.length];
+            for(int i = 0 ; i < choppedMessageContent.length; i++)
+            {
+                invertedMessageContent[invertedMessageContent.length-i-1] = choppedMessageContent[i];
+            }
+            return messageSplice[0]+":"+new String(invertedMessageContent);
+        }
+        return message;
+    }
+    
+    /**
+     * Using a symmetric encryption. Decryption method may internally use encryption method.
+     */
+    private String decrypt(String message)
+    {
+        return encrypt(message);
+    }
 }
