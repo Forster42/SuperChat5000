@@ -145,7 +145,7 @@ public final class ChatPanel extends JPanel
                 }
                 else if (message.startsWith("setname:")) {
 
-                    username = message.split(":")[0].trim();
+                    username = message.split(":")[1].trim();
                 }
                 else {
                     ConnectionManager.getInstance().sendMessage(username + ": " + message);
