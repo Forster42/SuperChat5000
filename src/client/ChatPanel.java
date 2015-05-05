@@ -40,7 +40,7 @@ public final class ChatPanel extends JPanel
 
         chatSend.addKeyListener(new KeyboardListener());
         
-        chatSend.setText("connect:192.168.21.100");
+        chatSend.setText("connect:192.168.1.3");
         
         ConnectionManager.getInstance().setOutputWindow(this);
     }
@@ -137,7 +137,6 @@ public final class ChatPanel extends JPanel
                     try {
                         ConnectionManager.getInstance().disconnect();
                         writeLog("Disconnected");
-                        return;
                     }
                     catch (IOException ex) {
                         throw new RuntimeException("Unable to disconnect");
@@ -147,8 +146,7 @@ public final class ChatPanel extends JPanel
                     ConnectionManager.getInstance().sendMessage(message);
                 }
 
-                //update own gui
-                //extendHistory(message);
+                //clear input field
                 clearEntryField();
             }
         }
