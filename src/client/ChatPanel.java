@@ -47,14 +47,6 @@ public final class ChatPanel extends JPanel
         ConnectionManager.getInstance().setOutputWindow(this);
     }
 
-    public void sendMessage(String hostname)
-    {
-        StringBuilder sb = new StringBuilder(hostname);
-        sb.append(chatSend.getText());
-        chatSend.setText("");
-        extendHistory(sb.toString());
-    }
-
     private String getEntry()
     {
         return chatSend.getText();
@@ -79,11 +71,14 @@ public final class ChatPanel extends JPanel
         sb.append("*");
         sb.append(logText);
         sb.append("*\n");
-        extendHistory(sb.toString());
+        extendHistory(sb.toString(), Color.black.toString());
     }
 
-    public void extendHistory(String addon)
+    public void extendHistory(String addon, String color)
     {
+        //TODO: Dont use a textArea, use something that can handle colors...
+        // @T-Dog: see here -> https://stackoverflow.com/questions/9031722/how-to-give-different-2-color-to-text-written-in-jtextarea
+
         //check if fits
         int linenumber = chatLog.getHeight() / 16;
         StringBuilder sb = new StringBuilder(chatLog.getText());
@@ -162,4 +157,18 @@ public final class ChatPanel extends JPanel
         }
 
     }
+
+    /**
+     * Extracts the messages sender prelude, uses a hash function to generate a
+     * unique color value for that prelude. This way all chat participants (most
+     * likely) have different colors and have the same colors on all clients.
+     *
+     * @return Hex representation of the Color derived from the Hash as String
+     */
+    public static String getPreludeColor(String message)
+    {
+        String prelude = message.split(":")[0];
+        return String.format("#%X", prelude.hashCode());
+    }
+
 }

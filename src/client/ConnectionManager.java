@@ -55,7 +55,7 @@ public class ConnectionManager
             {
                 String message = "";
                 while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
-                    chatPanel.extendHistory(decrypt(message));
+                    chatPanel.extendHistory(decrypt(message), ChatPanel.getPreludeColor(message));
                     try {
                         message = inputReader.readLine();
                     }
