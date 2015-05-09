@@ -134,6 +134,7 @@ public final class ChatPanel extends JPanel
             if (ke.getKeyCode() == 38) {
                 if (iter == null) {
                     iter = history.listIterator(history.size());
+                    setEntry("");
                 }
                 if (iter.hasPrevious()) {
                     setEntry(iter.previous());
