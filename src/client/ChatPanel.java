@@ -6,11 +6,14 @@ package client;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FontMetrics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -38,7 +41,10 @@ public final class ChatPanel extends JPanel
     //the chat bar below
     private final JTextField chatSend;
 
+    //stores the currently set username
     private String username;
+    private final ArrayList<String> history = new ArrayList<>();
+    private ListIterator<String> iter = null;
 
     public ChatPanel(Color bgColor)
     {
@@ -79,6 +85,11 @@ public final class ChatPanel extends JPanel
     private void clearEntryField()
     {
         chatSend.setText("");
+    }
+
+    private void setEntry(String entry)
+    {
+        chatSend.setText(entry);
     }
 
     public void writeLog(String logText)
@@ -125,6 +136,21 @@ public final class ChatPanel extends JPanel
         @Override
         public void keyPressed(KeyEvent ke)
         {
+            //arrow up [38] / arrow down [40] -> iterate through command history
+            if (ke.getKeyCode() == 38) {
+                if (iter == null) {
+                    iter = history.listIterator(history.size());
+                }
+                if (iter.hasPrevious()) {
+                    setEntry(iter.previous());
+                }
+            }
+            else {
+                iter = null;
+            }
+
+            //arrow down [40]
+            //esc [27] -> deconnect if connected
             if (ke.getKeyCode() == 27 && ConnectionManager.getInstance().isConnected()) {
                 try {
                     ConnectionManager.getInstance().disconnect();
@@ -138,9 +164,11 @@ public final class ChatPanel extends JPanel
             //get message and send when enter (keycode 10) was typed
             else if (ke.getKeyCode() == 10) {
 
-                //check if typed text was an internal command
+                //extract message from field and store message in history-collection
                 String message = getEntry();
+                history.add(message);
 
+                //check if typed text was an internal command
                 if (message.startsWith("connect:") && !ConnectionManager.getInstance().isConnected()) {
 
                     //connect to server if not yet connected
