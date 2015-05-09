@@ -10,9 +10,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,7 +68,8 @@ public final class ChatPanel extends JPanel
         add(chatSend, BorderLayout.SOUTH);
 
         chatSend.addKeyListener(new KeyboardListener());
-
+        writeLog("For internet server-ip, check:");
+        writeLog("http://students.fim.uni-passau.de/~schieder/gateway");
         chatSend.setText("connect:192.168.1.3");
 
         ConnectionManager.getInstance().setOutputWindow(this);
@@ -94,12 +92,8 @@ public final class ChatPanel extends JPanel
 
     public void writeLog(String logText)
     {
-        //build message string
-        StringBuilder logMessage = new StringBuilder("*");
-        logMessage.append(logText).append("*");
-
         //actually write message
-        extendHistory(logMessage.toString(), "#000000", true);
+        extendHistory(logText, "#000000", true);
     }
 
     public void extendHistory(String addon, String color, boolean centered)
