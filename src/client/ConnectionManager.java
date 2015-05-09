@@ -53,15 +53,17 @@ public class ConnectionManager
             @Override
             public void run()
             {
-                String message = "";
-                while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
-                    chatPanel.extendHistory(decrypt(message), ChatPanel.getPreludeColor(message));
-                    try {
+                String message;
+
+                try {
+                    message = inputReader.readLine();
+                    while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
+                        chatPanel.extendHistory(decrypt(message), ChatPanel.getPreludeColor(message), false);
                         message = inputReader.readLine();
                     }
-                    catch (IOException ex) {
-                        throw new RuntimeException(ex.getMessage());
-                    }
+                }
+                catch (IOException ex) {
+                    throw new RuntimeException(ex.getMessage());
                 }
                 //in case the server still needs to be unblocked, send unblock ACK
                 if (message.equals(DISCONNECT_REQ)) {
@@ -91,7 +93,7 @@ public class ConnectionManager
         if (connected) {
             try {
                 server.getOutputStream().write(
-                        ((encryptionEnabled?encrypt(message):message) + System.lineSeparator()).getBytes());
+                        ((encryptionEnabled ? encrypt(message) : message) + System.lineSeparator()).getBytes());
                 server.getOutputStream().flush();
             }
             catch (IOException ex) {
@@ -107,31 +109,32 @@ public class ConnectionManager
     }
 
     /**
-     * reverts the message (ignoring the message origin prelude)
+     * reverts the message (not affecting the message's source prelude, such as
+     * for instance :"maex: " or "torben: ")
      */
     private String encrypt(String message)
     {
         //checking for a collon, since this indicates a username exists, therfore it is not DISCONNECT_REQ / DISCONNECT_ACKF
-        if(message.contains(":"))
-        {
+        if (message.contains(":")) {
             //split at fors colon
             String[] messageSplice = message.split(":", 2);
-            char[]  choppedMessageContent = messageSplice[1].toCharArray();
+            char[] choppedMessageContent = messageSplice[1].toCharArray();
             char[] invertedMessageContent = new char[choppedMessageContent.length];
-            for(int i = 0 ; i < choppedMessageContent.length; i++)
-            {
-                invertedMessageContent[invertedMessageContent.length-i-1] = choppedMessageContent[i];
+            for (int i = 0; i < choppedMessageContent.length; i++) {
+                invertedMessageContent[invertedMessageContent.length - i - 1] = choppedMessageContent[i];
             }
-            return messageSplice[0]+":"+new String(invertedMessageContent);
+            return messageSplice[0] + ":" + new String(invertedMessageContent);
         }
         return message;
     }
-    
+
     /**
-     * Using a symmetric encryption. Decryption method may internally use encryption method.
+     * Using a symmetric encryption. Decryption method may internally use
+     * encryption method.
      */
     private String decrypt(String message)
     {
         return encrypt(message);
     }
+
 }

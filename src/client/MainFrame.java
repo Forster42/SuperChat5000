@@ -30,6 +30,6 @@ public class MainFrame extends JFrame {
         topLayer.removeAll();
         topLayer.add(chatPanel);
         setVisible(true);
-        chatPanel.writeLog("Client ready. Enter \"connect:SERVER_IP\" to join chat...");
+        //chatPanel.writeLog("Client ready. Enter \"connect:SERVER_IP\" to join chat...");
     }
 }

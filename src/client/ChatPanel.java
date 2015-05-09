@@ -6,10 +6,21 @@ package client;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 /**
  *
@@ -18,8 +29,15 @@ import javax.swing.*;
 public final class ChatPanel extends JPanel
 {
 
-    private final JTextArea chatLog;
+    //attributes for the chat history
+    private final JScrollPane historyScrollPane;
+    private final DefaultStyledDocument document;
+    private final Style style;
+    private final JTextPane chatLog;
+
+    //the chat bar below
     private final JTextField chatSend;
+
     private String username;
 
     public ChatPanel(Color bgColor)
@@ -29,15 +47,21 @@ public final class ChatPanel extends JPanel
 
         //final Container topLayer = getContentPane();
         setLayout(new BorderLayout());
-        setBackground(bgColor);
+        //setBackground(bgColor);
 
-        chatLog = new JTextArea();
-        chatLog.setBackground(bgColor);
+        //add chat history window + scrollbar
+        document = new DefaultStyledDocument();
+        chatLog = new JTextPane(document);
+        //chatLog.setBackground(bgColor);
+        StyleContext context = new StyleContext();
+        style = context.addStyle("test", null);
+        StyleConstants.setForeground(style, Color.BLUE);
         chatLog.setEditable(false);
-        add(chatLog, BorderLayout.CENTER);
+        historyScrollPane = new JScrollPane(chatLog, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        add(historyScrollPane, BorderLayout.CENTER);
 
         chatSend = new JTextField();
-        chatSend.setBackground(bgColor);
+        //chatSend.setBackground(bgColor);
         add(chatSend, BorderLayout.SOUTH);
 
         chatSend.addKeyListener(new KeyboardListener());
@@ -59,44 +83,35 @@ public final class ChatPanel extends JPanel
 
     public void writeLog(String logText)
     {
-        //center text
-        int offset = getWidth() / 2;
-        offset /= 5;
-        offset = offset - (logText.length() / 2);
-        StringBuilder sb = new StringBuilder();
-        for (offset = offset + 1; offset > 0; offset--) //+1 for the star
-        {
-            sb.append(" ");
-        }
-        sb.append("*");
-        sb.append(logText);
-        sb.append("*\n");
-        extendHistory(sb.toString(), Color.black.toString());
+        //build message string
+        StringBuilder logMessage = new StringBuilder("*");
+        logMessage.append(logText).append("*");
+
+        //actually write message
+        extendHistory(logMessage.toString(), "#000000", true);
     }
 
-    public void extendHistory(String addon, String color)
+    public void extendHistory(String addon, String color, boolean centered)
     {
-        //TODO: Dont use a textArea, use something that can handle colors...
-        // @T-Dog: see here -> https://stackoverflow.com/questions/9031722/how-to-give-different-2-color-to-text-written-in-jtextarea
+        //set font color
+        StyleConstants.setForeground(style, Color.decode(color));
 
-        //check if fits
-        int linenumber = chatLog.getHeight() / 16;
-        StringBuilder sb = new StringBuilder(chatLog.getText());
-        sb.append("\n");
-        sb.append(addon);
-        String[] chatArray = sb.toString().split("\n");
+        try {
+            document.insertString(document.getLength(), "\n" + addon, style);
+        }
+        catch (BadLocationException ex) {
+            Logger.getLogger(ChatPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        chatLog.setDocument(document);
 
-        if (chatArray.length <= linenumber) {
-            chatLog.setText(sb.toString());
-        }
-        else {
-            StringBuilder matchingString = new StringBuilder();
-            for (int i = chatArray.length - linenumber; i < chatArray.length; i++) {
-                matchingString.append("\n");
-                matchingString.append(chatArray[i]);
-            }
-            chatLog.setText(matchingString.toString());
-        }
+        //set font alignment
+        StyledDocument doc = chatLog.getStyledDocument();
+        SimpleAttributeSet center = new SimpleAttributeSet();
+        StyleConstants.setAlignment(center, (centered ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT));
+        doc.setParagraphAttributes(doc.getLength(), addon.length(), center, false);
+
+        //automatically scroll down so the most recently added message is shown
+        chatLog.setCaretPosition(chatLog.getDocument().getLength());
     }
 
     private class KeyboardListener implements KeyListener
@@ -110,8 +125,18 @@ public final class ChatPanel extends JPanel
         @Override
         public void keyPressed(KeyEvent ke)
         {
+            if (ke.getKeyCode() == 27 && ConnectionManager.getInstance().isConnected()) {
+                try {
+                    ConnectionManager.getInstance().disconnect();
+                    writeLog("Disconnected");
+                }
+                catch (IOException ex) {
+                    throw new RuntimeException("Unable to disconnect");
+                }
+            }
+
             //get message and send when enter (keycode 10) was typed
-            if (ke.getKeyCode() == 10) {
+            else if (ke.getKeyCode() == 10) {
 
                 //check if typed text was an internal command
                 String message = getEntry();
@@ -122,20 +147,11 @@ public final class ChatPanel extends JPanel
                     String ip = message.split(":")[1].trim();
                     try {
                         ConnectionManager.getInstance().connect(ip);
-                        writeLog("Connected to \"" + ip + "\"");
+                        writeLog("Connected to \"" + ip + "\" - ESC to disconnect.");
                     }
                     catch (IOException ex) {
                         writeLog("Unable to connect to \"" + ip + "\"");
                         return;
-                    }
-                }
-                else if (message.equals("disconnect") && ConnectionManager.getInstance().isConnected()) {
-                    try {
-                        ConnectionManager.getInstance().disconnect();
-                        writeLog("Disconnected");
-                    }
-                    catch (IOException ex) {
-                        throw new RuntimeException("Unable to disconnect");
                     }
                 }
                 else if (message.startsWith("setname:")) {
@@ -167,8 +183,10 @@ public final class ChatPanel extends JPanel
      */
     public static String getPreludeColor(String message)
     {
+        System.out.println(message);
+
         String prelude = message.split(":")[0];
-        return String.format("#%X", prelude.hashCode());
+        return String.format("#%X", prelude.hashCode()).substring(0, 7);
     }
 
 }
