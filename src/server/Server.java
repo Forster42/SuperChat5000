@@ -12,11 +12,10 @@ import java.util.logging.Logger;
 
 public class Server
 {
-
     private static final int PORT = 4242;
-    private Collection<Connection> connections = new LinkedList<>();
+    private final Collection<Connection> connections = new LinkedList<>();
     private boolean shutdown = false;
-    private String SHUTDOWN_MESSAGE = "shutdown";
+    private final String SHUTDOWN_MESSAGE = "shutdown";
     private ServerSocket serverSocket;
 
     public static void main(String[] args)

@@ -1,10 +1,11 @@
 package client;
 
+import encryption.Encryptor;
+import encryption.Identity;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.Arrays;
 
 /**
  *
@@ -19,7 +20,9 @@ public class ConnectionManager
     private final String DISCONNECT_ACK = "DISCONNECT_ACK";
     private boolean connected = false;
     private Socket server;
-    private boolean encryptionEnabled = true;
+
+    //choose other classes implementing the Encryptor-interface to switch encryption
+    private final Encryptor encryptor = new Identity();
 
     private static ConnectionManager singletonReference = null;
 
@@ -58,7 +61,7 @@ public class ConnectionManager
                 try {
                     message = inputReader.readLine();
                     while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
-                        chatPanel.extendHistory(decrypt(message), ChatPanel.getPreludeColor(message), false);
+                        chatPanel.extendHistory(encryptor.decrypt(message), ChatPanel.getPreludeColor(message), false);
                         message = inputReader.readLine();
                     }
                 }
@@ -93,7 +96,7 @@ public class ConnectionManager
         if (connected) {
             try {
                 server.getOutputStream().write(
-                        ((encryptionEnabled ? encrypt(message) : message) + System.lineSeparator()).getBytes());
+                        (encryptor.encrypt(message) + System.lineSeparator()).getBytes());
                 server.getOutputStream().flush();
             }
             catch (IOException ex) {
@@ -107,34 +110,4 @@ public class ConnectionManager
     {
         return connected;
     }
-
-    /**
-     * reverts the message (not affecting the message's source prelude, such as
-     * for instance :"maex: " or "torben: ")
-     */
-    private String encrypt(String message)
-    {
-        //checking for a collon, since this indicates a username exists, therfore it is not DISCONNECT_REQ / DISCONNECT_ACKF
-        if (message.contains(":")) {
-            //split at fors colon
-            String[] messageSplice = message.split(":", 2);
-            char[] choppedMessageContent = messageSplice[1].toCharArray();
-            char[] invertedMessageContent = new char[choppedMessageContent.length];
-            for (int i = 0; i < choppedMessageContent.length; i++) {
-                invertedMessageContent[invertedMessageContent.length - i - 1] = choppedMessageContent[i];
-            }
-            return messageSplice[0] + ":" + new String(invertedMessageContent);
-        }
-        return message;
-    }
-
-    /**
-     * Using a symmetric encryption. Decryption method may internally use
-     * encryption method.
-     */
-    private String decrypt(String message)
-    {
-        return encrypt(message);
-    }
-
 }
