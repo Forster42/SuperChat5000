@@ -1,5 +1,6 @@
 package client;
 
+import encryption.BitMask;
 import encryption.Encryptor;
 import encryption.Identity;
 import java.io.BufferedReader;
@@ -22,7 +23,7 @@ public class ConnectionManager
     private Socket server;
 
     //choose other classes implementing the Encryptor-interface to switch encryption
-    private final Encryptor encryptor = new Identity();
+    private final Encryptor encryptor = new BitMask(new Byte("4"));
 
     private static ConnectionManager singletonReference = null;
 
@@ -61,7 +62,7 @@ public class ConnectionManager
                 try {
                     message = inputReader.readLine();
                     while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
-                        chatPanel.extendHistory(encryptor.decrypt(message), ChatPanel.getPreludeColor(message), false);
+                        chatPanel.extendHistory(getMessagePrelude(message) + encryptor.decrypt(getMessageBody(message)), ChatPanel.getPreludeColor(getMessagePrelude(message)), false);
                         message = inputReader.readLine();
                     }
                 }
@@ -70,7 +71,7 @@ public class ConnectionManager
                 }
                 //in case the server still needs to be unblocked, send unblock ACK
                 if (message.equals(DISCONNECT_REQ)) {
-                    sendMessage(DISCONNECT_ACK);
+                    sendMessage(DISCONNECT_ACK, "");
                 }
 
                 connected = false;
@@ -83,7 +84,7 @@ public class ConnectionManager
 
     public void disconnect() throws IOException
     {
-        sendMessage(DISCONNECT_REQ);
+        sendMessage(DISCONNECT_REQ, "");
     }
 
     /**
@@ -91,12 +92,12 @@ public class ConnectionManager
      *
      * @param message as the content to be transmitted
      */
-    public void sendMessage(String message)
+    public void sendMessage(String prelude, String message)
     {
         if (connected) {
             try {
                 server.getOutputStream().write(
-                        (encryptor.encrypt(message) + System.lineSeparator()).getBytes());
+                        (prelude + encryptor.encrypt(message) + System.lineSeparator()).getBytes());
                 server.getOutputStream().flush();
             }
             catch (IOException ex) {
@@ -110,4 +111,19 @@ public class ConnectionManager
     {
         return connected;
     }
+
+    private String getMessagePrelude(String message)
+    {
+        return message.split(": ", 2)[0] + ": ";
+    }
+
+    private String getMessageBody(String message)
+    {
+        String[] splice = message.split(": ", 2);
+        if (splice.length > 1) {
+            return splice[1];
+        }
+        return "";
+    }
+
 }

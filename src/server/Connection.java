@@ -54,14 +54,16 @@ public class Connection implements Runnable
                     disconnect(message.equals(DISCONNECT_REQ));
                 }
             }
-
             // close connection
             client.close();
             System.out.println("[Closed a connection]");
-
         }
         catch (IOException e) {
             e.printStackTrace();
+        }
+        catch (NullPointerException npe) {
+            System.out.println("Unfriendly client just disappeared.");
+            server.removeConnection(this);
         }
     }
 

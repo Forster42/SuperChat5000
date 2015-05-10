@@ -182,7 +182,7 @@ public final class ChatPanel extends JPanel
                     username = message.split(":")[1].trim();
                 }
                 else {
-                    ConnectionManager.getInstance().sendMessage(username + ": " + message);
+                    ConnectionManager.getInstance().sendMessage(username + ": ", message);
                 }
 
                 //clear input field
@@ -208,8 +208,9 @@ public final class ChatPanel extends JPanel
     {
         System.out.println(message);
 
-        String prelude = message.split(":")[0];
-        return String.format("#%X", prelude.hashCode()).substring(0, 7);
+        String prelude = message.split(": ")[0];
+        System.out.println(prelude.hashCode());
+        return String.format("#%X", prelude.hashCode()).substring(0, 6);
     }
 
 }
