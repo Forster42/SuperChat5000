@@ -70,7 +70,7 @@ public final class ChatPanel extends JPanel
         chatSend.addKeyListener(new KeyboardListener());
         writeLog("For internet server-ip, check:");
         writeLog("http://students.fim.uni-passau.de/~schieder/gateway");
-        chatSend.setText("connect:192.168.1.3");
+        chatSend.setText("connect:192.168.1.8");
 
         ConnectionManager.getInstance().setOutputWindow(this);
     }
