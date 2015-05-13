@@ -1,0 +1,141 @@
+package Base.client;
+
+import Base.encryption.BitMask;
+import Base.encryption.Encryptor;
+import Base.encryption.Identity;
+import Base.encryption.Reverse;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.Socket;
+
+/**
+ *
+ * @author Max Schiedermeier
+ */
+public class ConnectionManager
+{
+
+    private static final int port = 4242;
+    private ChatPanel chatPanel;
+    private final String DISCONNECT_REQ = "DISCONNECT_REQ";
+    private final String DISCONNECT_ACK = "DISCONNECT_ACK";
+    private boolean connected = false;
+    private Socket server;
+
+    //choose other classes implementing the Encryptor-interface to switch encryption
+    private Encryptor encryptor = new Identity();
+
+    private static ConnectionManager singletonReference = null;
+
+    public static ConnectionManager getInstance()
+    {
+        if (singletonReference == null) {
+            singletonReference = new ConnectionManager();
+        }
+        return singletonReference;
+    }
+
+    private ConnectionManager()
+    {
+    	//choose encryption wisely using Munge...
+    	/*if[Identity]
+    	 encryptor = new Identity();
+    	 end[Identity]
+    	 if[Reverse]
+    	 encryptor = new Reverse();
+    	 end[Reverse]
+    	 if[BitMask]
+    	 encryptor = new BitMask(new Byte("4"));
+    	 end[BitMask]
+    	 */
+    }
+
+    public void setOutputWindow(ChatPanel chatPanel)
+    {
+        this.chatPanel = chatPanel;
+    }
+
+    public void connect(String serverIp) throws IOException
+    {
+        // connect to server socket and listen for incoming messages
+        server = new Socket(serverIp, port);
+        connected = true;
+        BufferedReader inputReader = new BufferedReader(new InputStreamReader(
+                server.getInputStream()));
+
+        new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                String message;
+
+                try {
+                    message = inputReader.readLine();
+                    while (!(message.equals(DISCONNECT_REQ) || message.equals(DISCONNECT_ACK))) {
+                        chatPanel.extendHistory(getMessagePrelude(message) + encryptor.decrypt(getMessageBody(message)), ChatPanel.getPreludeColor(getMessagePrelude(message)), false);
+                        message = inputReader.readLine();
+                    }
+                }
+                catch (IOException ex) {
+                    throw new RuntimeException(ex.getMessage());
+                }
+                //in case the server still needs to be unblocked, send unblock ACK
+                if (message.equals(DISCONNECT_REQ)) {
+                    sendMessage(DISCONNECT_ACK, "");
+                }
+
+                connected = false;
+                System.out.println("[Connection closed]");
+            }
+
+        }).start();
+
+    }
+
+    public void disconnect() throws IOException
+    {
+        sendMessage(DISCONNECT_REQ, "");
+    }
+
+    /**
+     * Sends message through socket connection.
+     *
+     * @param message as the content to be transmitted
+     */
+    public void sendMessage(String prelude, String message)
+    {
+        if (connected) {
+            try {
+                server.getOutputStream().write(
+                        (prelude + encryptor.encrypt(message) + System.lineSeparator()).getBytes());
+                server.getOutputStream().flush();
+            }
+            catch (IOException ex) {
+                throw new RuntimeException("Unable to send message. Broken Pipe possible.\n" + ex.getMessage());
+            }
+
+        }
+    }
+
+    public boolean isConnected()
+    {
+        return connected;
+    }
+
+    private String getMessagePrelude(String message)
+    {
+        return message.split(": ", 2)[0] + ": ";
+    }
+
+    private String getMessageBody(String message)
+    {
+        String[] splice = message.split(": ", 2);
+        if (splice.length > 1) {
+            return splice[1];
+        }
+        return "";
+    }
+
+}
