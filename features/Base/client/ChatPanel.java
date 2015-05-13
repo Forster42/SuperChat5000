@@ -206,11 +206,14 @@ public final class ChatPanel extends JPanel
      */
     public static String getPreludeColor(String message)
     {
-        System.out.println(message);
-
-        String prelude = message.split(": ")[0];
-        System.out.println(prelude.hashCode());
-        return String.format("#%X", prelude.hashCode()).substring(0, 6);
+    	/*
+    	 if_not[ColoredNames]
+    	 return "#000000";
+    	 else[ColoredNames]
+         String prelude = message.split(": ")[0];
+         return String.format("#%X", prelude.hashCode()).substring(0, 6);
+         end[ColoredNames]
+        */
     }
 
 }
